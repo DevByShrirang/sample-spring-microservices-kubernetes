@@ -16,7 +16,7 @@ pipeline {
       echo "🎉 Jenkins pipeline ran successfully !"
     }
     failure {
-      echo "❌ Jenkins pipeline failed — check syntax and CM connection!"
+      echo "❌ Jenkins pipeline failed — checkk syntax and CM connection!"
     }
   }
 }
