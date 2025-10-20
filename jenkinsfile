@@ -1,0 +1,23 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Check Jenkinsfile Execution') {
+      steps {
+        echo "✅ Jenkinsfile executed successfully!"
+        sh 'echo Current working directory: $(pwd)'
+        sh 'ls -R'
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "🎉 Jenkins pipeline ran successfully!"
+    }
+    failure {
+      echo "❌ Jenkins pipeline failed — check syntax or SCM connection!"
+    }
+  }
+}
+
