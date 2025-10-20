@@ -13,7 +13,7 @@ pipeline {
 
   post {
     success {
-      echo "🎉 Jenkins pipeline ran successfully!"
+      echo "🎉 Jenkins pipeline ran successfully now !"
     }
     failure {
       echo "❌ Jenkins pipeline failed — check syntax or SCM connection!"
