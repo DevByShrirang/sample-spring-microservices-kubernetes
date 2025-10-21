@@ -9,7 +9,7 @@ pipeline {
         AWS_REGION        = 'us-east-2'
         ECR_REPO          = '442042505508.dkr.ecr.us-east-2.amazonaws.com'
         SONARQUBE_SERVER  = 'SonarQubeServer'   // Jenkins SonarQube server name
-        AWS_CREDENTIALS   = 'aws-credentials'         // AWS credentials ID in Jenkins
+        AWS_CREDENTIALS   = 'aws-credentials'   // AWS credentials ID in Jenkins
         SONAR_PROJECT_KEY = 'microservices-dev' // Project key from SonarQube UI
         SONAR_PROJECT_NAME = 'microservices-dev'
         SONAR_PROJECT_VERSION = "1.0.${BUILD_NUMBER}"
@@ -21,6 +21,28 @@ pipeline {
             steps {
                 echo "📥 Checking out code from branch: ${params.BRANCH_NAME}"
                 git branch: "${params.BRANCH_NAME}", url: 'https://github.com/DevByShrirang/sample-spring-microservices-kubernetes.git'
+            }
+        }
+
+        // 🔍 DEBUG STAGE - Check Docker Environment
+        stage('Debug Docker Environment') {
+            steps {
+                echo "🔎 Verifying Docker setup inside Jenkins environment..."
+                sh '''
+                    echo "🧑‍💻 Current user:"
+                    whoami
+
+                    echo "📂 Checking Docker socket permissions:"
+                    ls -ld /var/run/docker.sock || echo "⚠️ Docker socket missing"
+
+                    echo "🐳 Docker info:"
+                    docker info | head -20 || echo "❌ Docker not accessible"
+
+                    echo "📦 Attempting to pull MongoDB test image (mongo:5.0)..."
+                    docker pull mongo:5.0 || echo "❌ Docker pull failed"
+
+                    echo "✅ Docker environment verification complete."
+                '''
             }
         }
 
@@ -96,4 +118,3 @@ pipeline {
         }
     }
 }
-
