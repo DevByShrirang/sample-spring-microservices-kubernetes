@@ -1,23 +1,33 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Check Jenkinsfile Execution') {
-      steps {
-        echo "✅ Jenkinsfile executed successfully!"
-        sh 'echo Current working directory: $(pwd)'
-        sh 'ls -R'
-      }
-    }
-  }
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "📥 Checking out code from branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
 
-  post {
-    success {
-      echo "🎉 Jenkins pipeline ran successfully !"
+        stage('Detect Changed Microservices') {
+            steps {
+                script {
+                    echo "🔍 Checking which microservices changed..."
+
+                    changedServices = sh(
+                        script: "git diff --name-only HEAD~1 | cut -d'/' -f1 | sort -u || true",
+                        returnStdout: true
+                    ).trim().split('\n')
+
+                    if (changedServices[0] == '') {
+                        echo "✅ No microservice changes detected."
+                        changedServices = []
+                    } else {
+                        echo "🔍 Changed microservices: ${changedServices}"
+                    }
+                }
+            }
+        }
     }
-    failure {
-      echo "❌ Jenkins pipeline failed — check syntax and CM connection!"
-    }
-  }
 }
 
