@@ -114,7 +114,7 @@ pipeline {
             echo "✅ Build pipeline completed successfully for branch: ${params.BRANCH_NAME}!"
         }
         failure {
-            echo "❌ Build failed for the branch: ${params.BRANCH_NAME}."
+            echo "❌ Build failed fo branch: ${params.BRANCH_NAME}."
         }
     }
 }
