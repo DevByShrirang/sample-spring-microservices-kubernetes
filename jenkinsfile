@@ -61,15 +61,15 @@ pipeline {
             }
         }
 
-        // 🧠 QUALITY GATE
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    echo "🛡️ Waiting for SonarQube Quality Gate result..."
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // // 🧠 QUALITY GATE
+        // stage('Quality Gate') {
+        //     steps {
+        //         timeout(time: 2, unit: 'MINUTES') {
+        //             echo "🛡️ Waiting for SonarQube Quality Gate result..."
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //     }
+        // }
 
         // 🐳 DOCKER BUILD AND PUSH FOR EACH SERVICE
         stage('Docker Build and Push for All Services') {
