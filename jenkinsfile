@@ -8,23 +8,24 @@ pipeline {
     environment {
         AWS_REGION        = 'us-east-2'
         ECR_REPO          = '442042505508.dkr.ecr.us-east-2.amazonaws.com'
-        SONARQUBE_SERVER  = 'SonarQubeServer'   // Jenkins SonarQube server name
-        AWS_CREDENTIALS   = 'aws-credentials'   // AWS credentials ID in Jenkins
-        SONAR_PROJECT_KEY = 'microservices-dev' // Project key from SonarQube UI
+        SONARQUBE_SERVER  = 'SonarQubeServer'
+        AWS_CREDENTIALS   = 'aws-credentials'
+        SONAR_PROJECT_KEY = 'microservices-dev'
         SONAR_PROJECT_NAME = 'microservices-dev'
         SONAR_PROJECT_VERSION = "1.0.${BUILD_NUMBER}"
     }
 
     stages {
 
-        // 🧹 CLEAN WORKSPACE STAGE
+        // 🧹 CLEAN WORKSPACE
         stage('Clean Workspace') {
             steps {
                 echo "🧽 Cleaning Jenkins workspace before build starts..."
-                cleanWs()  // Removes everything from the workspace
+                cleanWs()
             }
         }
 
+        // 📦 CHECKOUT CODE
         stage('Checkout Code') {
             steps {
                 echo "📥 Checking out code from branch: ${params.BRANCH_NAME}"
@@ -32,38 +33,16 @@ pipeline {
             }
         }
 
-        // 🔍 DEBUG STAGE - Check Docker Environment
-        stage('Debug Docker Environment') {
+        // 🧱 MAVEN BUILD (ROOT LEVEL)
+        stage('Build All Microservices') {
             steps {
-                echo "🔎 Verifying Docker setup inside Jenkins environment..."
-                sh '''
-                    echo "🧑‍💻 Current user:"
-                    whoami
-
-                    echo "📂 Checking Docker socket permissions:"
-                    ls -ld /var/run/docker.sock || echo "⚠️ Docker socket missing"
-
-                    echo "🐳 Docker info:"
-                    docker info | head -20 || echo "❌ Docker not accessible"
-
-                    echo "📦 Attempting to pull MongoDB test image (mongo:5.0)..."
-                    docker pull mongo:5.0 || echo "❌ Docker pull failed"
-
-                    echo "✅ Docker environment verification complete."
-                '''
-            }
-        }
-
-        stage('Build and Test') {
-            when { expression { params.BRANCH_NAME == 'develop' } }
-            steps {
-                echo "🏗️ Building code and running unit tests..."
+                echo "🏗️ Running Maven build for all microservices..."
                 sh 'mvn clean package -DskipTests=false'
             }
         }
 
+        // 🔍 SONARQUBE
         stage('SonarQube Analysis') {
-            when { expression { params.BRANCH_NAME == 'develop' } }
             steps {
                 echo "🔍 Running SonarQube Code Analysis..."
                 withSonarQubeEnv("${SONARQUBE_SERVER}") {
@@ -79,8 +58,8 @@ pipeline {
             }
         }
 
+        // 🧠 QUALITY GATE
         stage('Quality Gate') {
-            when { expression { params.BRANCH_NAME == 'develop' } }
             steps {
                 timeout(time: 2, unit: 'MINUTES') {
                     echo "🛡️ Waiting for SonarQube Quality Gate result..."
@@ -89,26 +68,37 @@ pipeline {
             }
         }
 
-        stage('Docker Build and Push (Dev)') {
-            when { expression { params.BRANCH_NAME == 'develop' } }
+        // 🐳 DOCKER BUILD AND PUSH FOR EACH SERVICE
+        stage('Docker Build and Push for All Services') {
             steps {
                 script {
-                    def serviceName = "admin-service"
-                    def imageTag = "dev-${BUILD_NUMBER}"
-                    def fullImageName = "${ECR_REPO}/${serviceName}:${imageTag}"
+                    def services = [
+                        'admin-service',
+                        'department-service',
+                        'employee-service',
+                        'gateway-service',
+                        'organization-service'
+                    ]
 
-                    echo "🐳 Building Docker image for ${serviceName}..."
-                    sh """
-                        docker build -t ${serviceName}:${imageTag} ${serviceName}/
-                        aws ecr get-login-password --region ${AWS_REGION} \
-                            | docker login --username AWS --password-stdin ${ECR_REPO}
-                        docker tag ${serviceName}:${imageTag} ${fullImageName}
-                        docker push ${fullImageName}
-                    """
+                    for (svc in services) {
+                        def imageTag = "dev-${BUILD_NUMBER}"
+                        def fullImageName = "${ECR_REPO}/${svc}:${imageTag}"
+
+                        echo "🐳 Building Docker image for ${svc}..."
+
+                        sh """
+                            docker build -t ${svc}:${imageTag} ${svc}/
+                            aws ecr get-login-password --region ${AWS_REGION} \
+                                | docker login --username AWS --password-stdin ${ECR_REPO}
+                            docker tag ${svc}:${imageTag} ${fullImageName}
+                            docker push ${fullImageName}
+                        """
+                    }
                 }
             }
         }
 
+        // 🧹 POST-BUILD CLEANUP
         stage('Post-Build Cleanup') {
             steps {
                 echo "🧹 Cleaning up local Docker images to save space..."
