@@ -35,13 +35,14 @@ pipeline {
 
         // 🧱 MAVEN BUILD (ROOT LEVEL)
         stage('Build All Microservices') {
-    steps {
-        echo "🏗️ Building all Maven modules from root..."
-        // Ensure Jenkins runs Maven from the root directory
-        dir("${WORKSPACE}") {
-            sh 'mvn clean package -DskipTests=false'
+            steps {
+                echo "🏗️ Building all Maven modules from root..."
+                // Ensure Jenkins runs Maven from the root directory
+                dir("${WORKSPACE}") {
+                    sh 'mvn clean package -DskipTests=false'
+                }
+            }
         }
-    }
 
         // 🔍 SONARQUBE
         stage('SonarQube Analysis') {
