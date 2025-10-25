@@ -17,6 +17,14 @@ pipeline {
 
     stages {
 
+        // 🧹 CLEAN WORKSPACE STAGE
+        stage('Clean Workspace') {
+            steps {
+                echo "🧽 Cleaning Jenkins workspace before build starts..."
+                cleanWs()  // Removes everything from the workspace
+            }
+        }
+
         stage('Checkout Code') {
             steps {
                 echo "📥 Checking out code from branch: ${params.BRANCH_NAME}"
@@ -114,7 +122,11 @@ pipeline {
             echo "✅ Build pipeline completed successfully for branch: ${params.BRANCH_NAME}!"
         }
         failure {
-            echo "❌ Build failed fo branch: ${params.BRANCH_NAME}."
+            echo "❌ Build failed for branch: ${params.BRANCH_NAME}."
+        }
+        always {
+            echo "🧽 Final workspace cleanup after pipeline completion..."
+            cleanWs()
         }
     }
 }
